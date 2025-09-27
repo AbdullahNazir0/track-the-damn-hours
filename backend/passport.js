@@ -8,19 +8,32 @@ passport.use(
         {
             clientID: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            callbackURL: "/auth/google/callback",
+            callbackURL: "http://localhost:3000/auth/google/callback",
         },
         async (_accessToken, _refreshToken, profile, done) => {
             try {
-                let user = await prisma.user.findUnique({ where: { providerId: profile.id } });
+                const email = profile.emails[0].value.toLowerCase();
+                let user = await prisma.user.findFirst({
+                    where: {
+                        OR: [
+                            { email },
+                            { providerId: profile.id }
+                        ]
+                    }
+                });
                 if (!user) {
                     user = await prisma.user.create({
                         data: {
                             name: profile.displayName,
-                            email: profile.emails[0].value,
+                            email,
                             provider: "gmail",
                             providerId: profile.id,
                         }
+                    });
+                } else if (!user.providerId) {
+                    user = await prisma.user.update({
+                        where: { email: user.email },
+                        data: { providerId: profile.id, provider: "gmail" }
                     });
                 }
                 return done(null, user);
@@ -36,19 +49,32 @@ passport.use(
         {
             clientID: process.env.GITHUB_CLIENT_ID,
             clientSecret: process.env.GITHUB_CLIENT_SECRET,
-            callbackURL: "/auth/github/callback",
+            callbackURL: "http://localhost:3000/auth/github/callback",
         },
         async (_accessToken, _refreshToken, profile, done) => {
             try {
-                let user = await prisma.user.findUnique({ where: { providerId: profile.id } });
+                const email = profile.emails[0].value.toLowerCase();
+                let user = await prisma.user.findFirst({
+                    where: {
+                        OR: [
+                            { email },
+                            { providerId: profile.id }
+                        ]
+                    }
+                });
                 if (!user) {
                     user = await prisma.user.create({
                         data: {
                             name: profile.displayName,
-                            email: profile.emails[0].value,
+                            email,
                             provider: "github",
                             providerId: profile.id,
                         }
+                    });
+                } else if (!user.providerId) {
+                    user = await prisma.user.update({
+                        where: { email: user.email },
+                        data: { providerId: profile.id, provider: "gmail" }
                     });
                 }
                 return done(null, user);
@@ -58,18 +84,5 @@ passport.use(
         }
     )
 );
-
-passport.serializeUser((user, done) => {
-    done(null, user.id);
-});
-
-passport.deserializeUser(async (id, done) => {
-    try {
-        const user = await prisma.user.findUnique({ where: { id } });
-        done(null, user);
-    } catch (err) {
-        done(err, null);
-    }
-});
 
 export default passport;

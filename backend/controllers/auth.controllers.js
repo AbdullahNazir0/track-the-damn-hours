@@ -2,6 +2,8 @@ import prisma from "../utils/prisma.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+const JWT_SECRET = process.env.JWT_SECRET || "cnaosixfm,.qwexfmqnyc7236@^%r3X.FASUYDG";
+
 async function register(req, res) {
     try {
         const { name, email, password } = req.body;
@@ -43,7 +45,7 @@ async function login(req, res) {
         }
 
         const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "1h" });
-        res.json({ token, user });
+        res.json({ token, message: "User logged in successfully" });
     } catch (error) {
         res.status(500).json({ error: error?.message || "Something went wrong" });
     }
