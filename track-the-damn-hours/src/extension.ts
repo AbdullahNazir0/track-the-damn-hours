@@ -1,26 +1,40 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import { login } from "./auth/authService";
+import { AuthUriHandler } from './auth/uriHandler';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+const TOKEN_KEY = "authToken";
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "track-the-damn-hours" is now active!');
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('track-the-damn-hours.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from track-the-damn-hours!');
-	});
-
-	context.subscriptions.push(disposable);
+export async function getToken(context: vscode.ExtensionContext): Promise<string | null> {
+	return await context.secrets.get(TOKEN_KEY) || null;
 }
 
-// This method is called when your extension is deactivated
-export function deactivate() {}
+export async function saveToken(context: vscode.ExtensionContext, token: string) {
+	await context.secrets.store(TOKEN_KEY, token);
+}
+
+export async function clearToken(context: vscode.ExtensionContext) {
+	await context.secrets.delete(TOKEN_KEY);
+}
+
+export async function activate(context: vscode.ExtensionContext) {
+
+	const token = await getToken(context);
+
+	if (!token) {
+		vscode.window.showInformationMessage("You are not logged in. Redirecting to login...");
+		vscode.commands.executeCommand("trackTime.login"); // trigger login automatically
+	}
+
+	vscode.window.showInformationMessage("Welcome back! Token loaded.");
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand("trackTime.login", async () => {
+			await login(context);
+		})
+	);
+
+	const uriHandler = new AuthUriHandler(context);
+	context.subscriptions.push(vscode.window.registerUriHandler(uriHandler));
+}
+
+export function deactivate() { }

@@ -1,6 +1,6 @@
 {
   "name": "track-the-damn-hours",
-  "displayName": "track-the-damn-hours",
+  "displayName": "Track the damn hours",
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -9,12 +9,18 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "track-the-damn-hours.helloWorld",
+        "command": "trackTime.login",
+        "title": "Login to Track The Damn Hours"
+      },
+      {
+        "command": "extension.startTracking",
         "title": "Hello World"
       }
     ]
